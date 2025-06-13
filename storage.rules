@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow access to accident videos with Firestore integration
+    match /accident_videos/{sourceType}/{videoId} {
+      // Allow read access until July 4, 2025
+      allow read: if request.time < timestamp.date(2025, 7, 4);
+      
+      // Allow write access if document exists in Firestore accidents collection
+      allow write: if request.time < timestamp.date(2025, 7, 4)
+                  && request.resource.size < 100 * 1024 * 1024 // 100MB max
+                  && request.resource.contentType.matches('video/.*')
+                  && exists(/databases/(default)/documents/accidents/$(videoId));
+    }
+
+    // Default rule for other paths
+    match /{allPaths=**} {
+      allow read, write: if request.time < timestamp.date(2025, 7, 4);
+    }
+  }
+} 
